@@ -809,12 +809,20 @@ function speakingWindow(){
   if (g === "초4" || g === "초5") return [4, 7];
   return [6, 9];   // 초6, 중1~중3
 }
-// SPEAKING 문항을 Item_ID 순(난이도 사다리)으로 정렬 → 구간 슬라이스 → 문장 배열
+// SPEAKING 문항 선택 — 학생 세트(A/B/C)에 맞는 문항을, 같은 난이도 안에서는 섞어 쉬운→어려운 순으로 N개.
+const SPEAK_COUNT = 4;   // 한 학생이 읽는 스피킹 문항 수
 function pickSpeakingScripts(){
-  const all = SPEAKING.slice()
-    .sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
-  const w = speakingWindow();
-  return all.slice(w[0] - 1, w[1])
+  const dr = { EASY:0, MED:1, HARD:2 };
+  let pool = SPEAKING.filter(q => inSet(q));
+  const i = LEVELS.indexOf(S.estLevel);
+  if (i === 0 || i === 1){
+    const a = SPEAKING.filter(q => String(q.set).trim().toUpperCase() === "A");
+    if (a.length) pool = a;
+  }
+  if (!pool.length) pool = SPEAKING.slice();
+  pool = pickN(pool, pool.length)
+    .sort((a, b) => (dr[String(a.difficulty).trim().toUpperCase()] ?? 1) - (dr[String(b.difficulty).trim().toUpperCase()] ?? 1));
+  return pool.slice(0, SPEAK_COUNT)
     .map(q => ({ id: q.id, title: q.title }))
     .filter(x => x.title && String(x.title).trim());
 }
